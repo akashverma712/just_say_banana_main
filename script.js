@@ -224,14 +224,6 @@ logo6.addEventListener("mouseleave", () => {
   gsap.to(logo6, { rotate: 0, scale: 1, duration: 0.4, ease: "power1.out" });
 });
 
-const logo7 = document.querySelector("img[alt='Just Say Banana Logo7']");
-logo7.addEventListener("mouseenter", () => {
-  gsap.to(logo7, { rotate: -5, scale: 1.1, duration: 0.4, ease: "power1.out" });
-});
-logo7.addEventListener("mouseleave", () => {
-  gsap.to(logo7, { rotate: 0, scale: 1, duration: 0.4, ease: "power1.out" });
-});
-
 // document.querySelector(".bg-white").addEventListener("click", () => {
 //   const tl = gsap.timeline();
 
@@ -419,10 +411,11 @@ window.addEventListener("load", () => {
   });
 });
 
-
-const DURATION = 1;
-const SECTIONS = ['#section1', '.section2', '#section3', '#section4', '#section5', '#section6']
+const SECTIONS = ['#section1', '.section2', '#section3', '#section4', '#section5', '#section6'];
 let secId = 0;
+const PEELLENGTH = 2;
+const DURATION = 1.2;
+
 let isAnimating = false;
 
 function setAnimating() {
@@ -432,27 +425,49 @@ function setAnimating() {
   }, DURATION * 1000);
 }
 
-function nextSection() {
-  secId++;
-  const selector = SECTIONS[secId];
-  gsap.fromTo(selector, {
-    top: '100vh',
+function flipNext() {
+  if(secId > SECTIONS.length-2) 
+    return;
+
+  gsap.fromTo(SECTIONS[secId], {
+    clipPath: `polygon(0 0, ${100+PEELLENGTH}% 0, 100% 100%, 0 100%)`,
   }, {
-    top: 0,
+    clipPath: `polygon(0 0, 0% 0, -${PEELLENGTH}% 100%, 0 100%)`,
     duration: DURATION,
+    ease: "expoScale(1,2,none)",
   })
+
+  gsap.to(`${SECTIONS[secId]}>.peel`, {
+    x: -window.innerWidth*1,
+    boxShadow: '-1px 0px 12px #0008',
+    duration: DURATION,
+    ease: "expoScale(1,2,none)",
+  })
+
+  secId++;
   setAnimating();
 }
 
-function prevSection() {
-  const selector = SECTIONS[secId];
+function flipPrev() {
+  if(secId < 1)
+    return
+
   secId--;
-  gsap.fromTo(selector, {
-    top: 0,
+
+  gsap.fromTo(SECTIONS[secId], {
+    clipPath: `polygon(0 0, 0% 0, -${PEELLENGTH}% 100%, 0 100%)`,
   }, {
-    top: '100vh',
+    clipPath: `polygon(0 0, ${100+PEELLENGTH}% 0, 100% 100%, 0 100%)`,
     duration: DURATION,
+    ease: "expoScale(1,2,none)",
   })
+
+  gsap.to(`${SECTIONS[secId]}>.peel`, {
+    x: window.innerWidth*0.99,
+    duration: DURATION,
+    ease: "expoScale(1,2,none)",
+  })
+
   setAnimating();
 }
 
@@ -461,41 +476,20 @@ window.addEventListener('wheel', e => {
   if (isAnimating) return;
 
   if (e.deltaY > DELTATHRESHOLDWHEEL && secId < SECTIONS.length - 1) {
-    nextSection();
+    flipNext();
   }
   if (e.deltaY < -DELTATHRESHOLDWHEEL && secId > 0) {
-    prevSection();
+    flipPrev();
   }
 })
-
-const DELTATHRESHOLDTOUCH = 30; // pixels for touch
-let touchStartY = 0;
-
-window.addEventListener('touchstart', (e) => {
-  touchStartY = e.touches[0].clientY;
-});
-
-window.addEventListener('touchend', (e) => {
-  const touchEndY = e.changedTouches[0].clientY;
-  const deltaY = touchStartY - touchEndY;
-
-  if (isAnimating) return;
-
-  if (deltaY > DELTATHRESHOLDTOUCH && secId < SECTIONS.length - 1) {
-    nextSection();
-  }
-  if (deltaY < -DELTATHRESHOLDTOUCH && secId > 0) {
-    prevSection();
-  }
-});
 
 
 window.addEventListener('keydown', function (e) {
 
-  if (e.keyCode == 37)
-    nextSection();
-  else if (e.keyCode == 39)
-    prevSection();
+  if (e.keyCode == 39)
+    flipNext();
+  else if (e.keyCode == 37)
+    flipPrev();
 
 });
 
@@ -505,20 +499,17 @@ let prevY = 0
 window.addEventListener('pointerdown', function (e) {
   prevX = e.clientX;
   prevY = e.clientY;
-  // console.log(e)
 })
 
 window.addEventListener('pointerup', function (e) {
-
-  // console.log(e);
   let w = window.innerWidth;
   let h = window.innerHeight;
   let y = e.clientY;
   let x = e.clientX;
 
-  if (y < prevY)
-    nextSection();
-  else if (y > prevY)
-    prevSection();
+  if (y - prevY < prevX - x)
+    flipNext();
+  else
+    flipPrev();
 
 });
